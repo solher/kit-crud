@@ -6,3 +6,8 @@ import:
 - package: github.com/pressly/chi
 - package: github.com/spf13/cobra
 - package: github.com/spf13/viper
+- package: github.com/ansel1/merry
+- package: github.com/go-zoo/bone
+- package: github.com/go-playground/lars
+- package: github.com/urfave/negroni
+- package: github.com/gorilla/mux

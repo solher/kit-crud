@@ -5,11 +5,13 @@ import (
 
 	"github.com/go-kit/kit/log"
 
-	"github.com/pressly/chi"
+	"github.com/solher/kit-crud/library"
 	"github.com/spf13/viper"
+	"golang.org/x/net/context"
 )
 
 func Builder(v *viper.Viper, l log.Logger) (http.Handler, error) {
-	router := chi.NewRouter()
-	return router, nil
+	ctx := context.Background()
+	ls := library.NewService()
+	return library.MakeHTTPHandler(ctx, ls), nil
 }
