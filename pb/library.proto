@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package pb;
+
+message Document {
+  string id = 1;
+  string user_id = 2;
+  string content = 3;
+}
+
+service Library {
+  rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentReply);
+  rpc FindDocuments (FindDocumentsRequest) returns (FindDocumentsReply);
+  rpc FindDocumentsById (FindDocumentsByIdRequest) returns (FindDocumentsByIdReply);
+  rpc ReplaceDocumentById (ReplaceDocumentByIdRequest) returns (ReplaceDocumentByIdReply);
+  rpc DeleteDocumentsById (DeleteDocumentsByIdRequest) returns (DeleteDocumentsByIdReply);
+}
+
+message CreateDocumentRequest {
+  string user_id = 1;
+  Document document = 2;
+}
+
+message CreateDocumentReply {
+  Document document = 1;
+  string err = 2;
+}
+
+message FindDocumentsRequest {
+  string user_id = 1;
+}
+
+message FindDocumentsReply {
+  repeated Document documents = 1;
+  string err = 2;
+}
+
+message FindDocumentsByIdRequest {
+  string user_id = 1;
+  repeated string ids = 2;
+}
+
+message FindDocumentsByIdReply {
+  repeated Document documents = 1;
+  string err = 2;
+}
+
+message ReplaceDocumentByIdRequest {
+  string user_id = 1;
+  string id = 2;
+  Document document = 3;
+}
+
+message ReplaceDocumentByIdReply {
+  Document document = 1;
+  string err = 2;
+}
+
+message DeleteDocumentsByIdRequest {
+  string user_id = 1;
+  repeated string ids = 2;
+}
+
+message DeleteDocumentsByIdReply {
+  repeated Document documents = 1;
+  string err = 2;
+}
