@@ -9,11 +9,11 @@ message Document {
 }
 
 service Library {
-  rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentReply);
-  rpc FindDocuments (FindDocumentsRequest) returns (FindDocumentsReply);
-  rpc FindDocumentsById (FindDocumentsByIdRequest) returns (FindDocumentsByIdReply);
-  rpc ReplaceDocumentById (ReplaceDocumentByIdRequest) returns (ReplaceDocumentByIdReply);
-  rpc DeleteDocumentsById (DeleteDocumentsByIdRequest) returns (DeleteDocumentsByIdReply);
+  rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentReply) {}
+  rpc FindDocuments (FindDocumentsRequest) returns (FindDocumentsReply) {}
+  rpc FindDocumentsById (FindDocumentsByIdRequest) returns (FindDocumentsByIdReply) {}
+  rpc ReplaceDocumentById (ReplaceDocumentByIdRequest) returns (ReplaceDocumentByIdReply) {}
+  rpc DeleteDocumentsById (DeleteDocumentsByIdRequest) returns (DeleteDocumentsByIdReply) {}
 }
 
 message CreateDocumentRequest {
