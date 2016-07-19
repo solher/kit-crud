@@ -3,14 +3,21 @@ package client
 import (
 	"io"
 
+	"github.com/go-kit/kit/log"
+
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/sd"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
 	"github.com/solher/kit-crud/pb"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
-func NewGRPC(consulAddr string) (Service, error) {
+var nopCodec = func(_ context.Context, r interface{}) (interface{}, error) {
+	return r, nil
+}
+
+func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
 	var (
 		endpoints = Endpoints{}
 	)
@@ -84,8 +91,8 @@ func grpcClient(conn *grpc.ClientConn) Service {
 		conn,
 		"Library",
 		"CreateDocument",
-		encodeGRPCCreateDocumentRequest,
-		decodeGRPCCreateDocumentResponse,
+		nopCodec,
+		nopCodec,
 		pb.CreateDocumentReply{},
 		opts...,
 	).Endpoint()
@@ -94,8 +101,8 @@ func grpcClient(conn *grpc.ClientConn) Service {
 		conn,
 		"Library",
 		"FindDocuments",
-		encodeGRPCFindDocumentsRequest,
-		decodeGRPCFindDocumentsResponse,
+		nopCodec,
+		nopCodec,
 		pb.FindDocumentsReply{},
 		opts...,
 	).Endpoint()
@@ -104,8 +111,8 @@ func grpcClient(conn *grpc.ClientConn) Service {
 		conn,
 		"Library",
 		"FindDocumentsById",
-		encodeGRPCFindDocumentsByIDRequest,
-		decodeGRPCFindDocumentsByIDResponse,
+		nopCodec,
+		nopCodec,
 		pb.FindDocumentsByIdReply{},
 		opts...,
 	).Endpoint()
@@ -114,8 +121,8 @@ func grpcClient(conn *grpc.ClientConn) Service {
 		conn,
 		"Library",
 		"ReplaceDocumentById",
-		encodeGRPCReplaceDocumentByIDRequest,
-		decodeGRPCReplaceDocumentByIDResponse,
+		nopCodec,
+		nopCodec,
 		pb.ReplaceDocumentByIdReply{},
 		opts...,
 	).Endpoint()
@@ -124,8 +131,8 @@ func grpcClient(conn *grpc.ClientConn) Service {
 		conn,
 		"Library",
 		"DeleteDocumentsById",
-		encodeGRPCDeleteDocumentsByIDRequest,
-		decodeGRPCDeleteDocumentsByIDResponse,
+		nopCodec,
+		nopCodec,
 		pb.DeleteDocumentsByIdReply{},
 		opts...,
 	).Endpoint()

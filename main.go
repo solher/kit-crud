@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/go-kit/kit/log"
 	"github.com/solher/kit-crud/library"
 	"github.com/solher/kit-crud/pb"
 	"golang.org/x/net/context"
@@ -19,10 +20,19 @@ func main() {
 	)
 	flag.Parse()
 
+	// Logging domain.
+	var logger log.Logger
+	{
+		logger = log.NewLogfmtLogger(os.Stderr)
+		logger = log.NewContext(logger).With("ts", log.DefaultTimestampUTC)
+		logger = log.NewContext(logger).With("caller", log.DefaultCaller)
+	}
+
 	// Business domain.
 	var service library.Service
 	{
 		service = library.NewService()
+		service = library.ServiceLoggingMiddleware(logger)(service)
 	}
 
 	// Endpoint domain.

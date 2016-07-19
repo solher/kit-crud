@@ -1,7 +1,10 @@
 package client
 
 import (
+	"errors"
+
 	"github.com/go-kit/kit/endpoint"
+	"github.com/solher/kit-crud/pb"
 	"golang.org/x/net/context"
 )
 
@@ -13,157 +16,136 @@ type Endpoints struct {
 	DeleteDocumentsByIDEndpoint endpoint.Endpoint
 }
 
-func (e Endpoints) CreateDocument(userID string, document *Document) (*Document, error) {
-	req := CreateDocumentRequest{
-		UserID:   userID,
+func (e Endpoints) CreateDocument(userID string, document *pb.Document) (*pb.Document, error) {
+	req := &pb.CreateDocumentRequest{
+		UserId:   userID,
 		Document: document,
 	}
-	res, err := e.CreateDocumentEndpoint(context.Background(), req)
+	response, err := e.CreateDocumentEndpoint(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}
-	return res.(CreateDocumentResponse).Document,
-		res.(CreateDocumentResponse).Err
+	res := response.(*pb.CreateDocumentReply)
+	return res.Document, toError(res.Err)
 }
 
-func (e Endpoints) FindDocuments(userID string) ([]Document, error) {
-	req := FindDocumentsRequest{
-		UserID: userID,
+func (e Endpoints) FindDocuments(userID string) ([]*pb.Document, error) {
+	req := &pb.FindDocumentsRequest{
+		UserId: userID,
 	}
-	res, err := e.FindDocumentsEndpoint(context.Background(), req)
+	response, err := e.FindDocumentsEndpoint(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}
-	return res.(FindDocumentsResponse).Documents,
-		res.(FindDocumentsResponse).Err
+	res := response.(*pb.FindDocumentsReply)
+	return res.Documents, toError(res.Err)
 }
 
-func (e Endpoints) FindDocumentsByID(userID string, ids []string) ([]Document, error) {
-	req := FindDocumentsByIDRequest{
-		UserID: userID,
-		IDs:    ids,
+func (e Endpoints) FindDocumentsByID(userID string, ids []string) ([]*pb.Document, error) {
+	req := &pb.FindDocumentsByIdRequest{
+		UserId: userID,
+		Ids:    ids,
 	}
-	res, err := e.FindDocumentsByIDEndpoint(context.Background(), req)
+	response, err := e.FindDocumentsByIDEndpoint(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}
-	return res.(FindDocumentsByIDResponse).Documents,
-		res.(FindDocumentsByIDResponse).Err
+	res := response.(*pb.FindDocumentsByIdReply)
+	return res.Documents, toError(res.Err)
 }
 
-func (e Endpoints) ReplaceDocumentByID(userID string, id string, document *Document) (*Document, error) {
-	req := ReplaceDocumentByIDRequest{
-		UserID:   userID,
-		ID:       id,
+func (e Endpoints) ReplaceDocumentByID(userID string, id string, document *pb.Document) (*pb.Document, error) {
+	req := &pb.ReplaceDocumentByIdRequest{
+		UserId:   userID,
+		Id:       id,
 		Document: document,
 	}
-	res, err := e.ReplaceDocumentByIDEndpoint(context.Background(), req)
+	response, err := e.ReplaceDocumentByIDEndpoint(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}
-	return res.(ReplaceDocumentByIDResponse).Document,
-		res.(ReplaceDocumentByIDResponse).Err
+	res := response.(*pb.ReplaceDocumentByIdReply)
+	return res.Document, toError(res.Err)
 }
 
-func (e Endpoints) DeleteDocumentsByID(userID string, ids []string) ([]Document, error) {
-	req := DeleteDocumentsByIDRequest{
-		UserID: userID,
-		IDs:    ids,
+func (e Endpoints) DeleteDocumentsByID(userID string, ids []string) ([]*pb.Document, error) {
+	req := &pb.DeleteDocumentsByIdRequest{
+		UserId: userID,
+		Ids:    ids,
 	}
-	res, err := e.DeleteDocumentsByIDEndpoint(context.Background(), req)
+	response, err := e.DeleteDocumentsByIDEndpoint(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}
-	return res.(DeleteDocumentsByIDResponse).Documents,
-		res.(DeleteDocumentsByIDResponse).Err
-}
-
-type CreateDocumentRequest struct {
-	UserID   string
-	Document *Document
-}
-
-type CreateDocumentResponse struct {
-	Document *Document
-	Err      error `json:"err"`
+	res := response.(*pb.DeleteDocumentsByIdReply)
+	return res.Documents, toError(res.Err)
 }
 
 func MakeCreateDocumentEndpoint(s Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		req := request.(CreateDocumentRequest)
-		document, err := s.CreateDocument(req.UserID, req.Document)
-		return CreateDocumentResponse{Document: document, Err: err}, nil
+		req := request.(*pb.CreateDocumentRequest)
+		document, err := s.CreateDocument(req.UserId, req.Document)
+		return &pb.CreateDocumentReply{
+			Document: document,
+			Err:      toPBError(err),
+		}, nil
 	}
-}
-
-type FindDocumentsRequest struct {
-	UserID string
-}
-
-type FindDocumentsResponse struct {
-	Documents []Document `json:"documents"`
-	Err       error      `json:"err"`
 }
 
 func MakeFindDocumentsEndpoint(s Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		req := request.(FindDocumentsRequest)
-		documents, err := s.FindDocuments(req.UserID)
-		return FindDocumentsResponse{Documents: documents, Err: err}, nil
+		req := request.(*pb.FindDocumentsRequest)
+		documents, err := s.FindDocuments(req.UserId)
+		return &pb.FindDocumentsReply{
+			Documents: documents,
+			Err:       toPBError(err),
+		}, nil
 	}
-}
-
-type FindDocumentsByIDRequest struct {
-	UserID string
-	IDs    []string
-}
-
-type FindDocumentsByIDResponse struct {
-	Documents []Document `json:"documents"`
-	Err       error      `json:"err"`
 }
 
 func MakeFindDocumentsByIDEndpoint(s Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		req := request.(FindDocumentsByIDRequest)
-		documents, err := s.FindDocumentsByID(req.UserID, req.IDs)
-		return FindDocumentsByIDResponse{Documents: documents, Err: err}, nil
+		req := request.(*pb.FindDocumentsByIdRequest)
+		documents, err := s.FindDocumentsByID(req.UserId, req.Ids)
+		return &pb.FindDocumentsByIdReply{
+			Documents: documents,
+			Err:       toPBError(err),
+		}, nil
 	}
-}
-
-type ReplaceDocumentByIDRequest struct {
-	UserID   string
-	ID       string
-	Document *Document
-}
-
-type ReplaceDocumentByIDResponse struct {
-	Document *Document `json:"document"`
-	Err      error     `json:"err"`
 }
 
 func MakeReplaceDocumentByIDEndpoint(s Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		req := request.(ReplaceDocumentByIDRequest)
-		document, err := s.ReplaceDocumentByID(req.UserID, req.ID, req.Document)
-		return ReplaceDocumentByIDResponse{Document: document, Err: err}, nil
+		req := request.(*pb.ReplaceDocumentByIdRequest)
+		document, err := s.ReplaceDocumentByID(req.UserId, req.Id, req.Document)
+		return &pb.ReplaceDocumentByIdReply{
+			Document: document,
+			Err:      toPBError(err),
+		}, nil
 	}
-}
-
-type DeleteDocumentsByIDRequest struct {
-	UserID string
-	IDs    []string
-}
-
-type DeleteDocumentsByIDResponse struct {
-	Documents []Document `json:"documents"`
-	Err       error      `json:"err"`
 }
 
 func MakeDeleteDocumentsByIDEndpoint(s Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		req := request.(DeleteDocumentsByIDRequest)
-		documents, err := s.DeleteDocumentsByID(req.UserID, req.IDs)
-		return DeleteDocumentsByIDResponse{Documents: documents, Err: err}, nil
+		req := request.(*pb.DeleteDocumentsByIdRequest)
+		documents, err := s.DeleteDocumentsByID(req.UserId, req.Ids)
+		return &pb.DeleteDocumentsByIdReply{
+			Documents: documents,
+			Err:       toPBError(err),
+		}, nil
 	}
+}
+
+func toError(err string) error {
+	if len(err) == 0 {
+		return nil
+	}
+	return errors.New(err)
+}
+
+func toPBError(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }
