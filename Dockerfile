@@ -8,8 +8,7 @@ RUN apk add --update git \
 COPY . $SRC_PATH
 WORKDIR $SRC_PATH
 
-RUN go get github.com/Masterminds/glide \
-&& glide install \
+RUN go get -u ./... \
 && go build -v \
 && cp $APP_NAME /usr/bin \
 && apk del git \
