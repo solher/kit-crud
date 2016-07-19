@@ -2,12 +2,14 @@ package: github.com/solher/kit-crud
 import:
 - package: github.com/go-kit/kit
   subpackages:
-  - /log
-- package: github.com/pressly/chi
-- package: github.com/spf13/cobra
-- package: github.com/spf13/viper
-- package: github.com/ansel1/merry
-- package: github.com/go-zoo/bone
-- package: github.com/go-playground/lars
-- package: github.com/urfave/negroni
-- package: github.com/gorilla/mux
+  - /endpoint
+  - log
+  - sd
+  - transport/grpc
+- package: github.com/golang/protobuf
+  subpackages:
+  - /proto
+- package: golang.org/x/net
+  subpackages:
+  - /context
+- package: google.golang.org/grpc

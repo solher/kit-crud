@@ -23,7 +23,7 @@ func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
 	)
 	{
 		factory := grpcFactory(MakeCreateDocumentEndpoint)
-		endpoint, _, err := factory("localhost:8082")
+		endpoint, _, err := factory(consulAddr)
 		// defer conn.Close()
 		if err != nil {
 			return nil, err
@@ -32,7 +32,7 @@ func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
 	}
 	{
 		factory := grpcFactory(MakeFindDocumentsEndpoint)
-		endpoint, _, err := factory("localhost:8082")
+		endpoint, _, err := factory(consulAddr)
 		// defer conn.Close()
 		if err != nil {
 			return nil, err
@@ -41,7 +41,7 @@ func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
 	}
 	{
 		factory := grpcFactory(MakeFindDocumentsByIDEndpoint)
-		endpoint, _, err := factory("localhost:8082")
+		endpoint, _, err := factory(consulAddr)
 		// defer conn.Close()
 		if err != nil {
 			return nil, err
@@ -50,7 +50,7 @@ func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
 	}
 	{
 		factory := grpcFactory(MakeReplaceDocumentByIDEndpoint)
-		endpoint, _, err := factory("localhost:8082")
+		endpoint, _, err := factory(consulAddr)
 		// defer conn.Close()
 		if err != nil {
 			return nil, err
@@ -59,7 +59,7 @@ func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
 	}
 	{
 		factory := grpcFactory(MakeDeleteDocumentsByIDEndpoint)
-		endpoint, _, err := factory("localhost:8082")
+		endpoint, _, err := factory(consulAddr)
 		// defer conn.Close()
 		if err != nil {
 			return nil, err
