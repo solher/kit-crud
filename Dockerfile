@@ -18,5 +18,5 @@ RUN go get -u ./... \
 WORKDIR /
 
 USER app
-EXPOSE 3000
+EXPOSE 8082
 CMD $APP_NAME
