@@ -16,7 +16,7 @@ type Endpoints struct {
 	DeleteDocumentsByIDEndpoint endpoint.Endpoint
 }
 
-func (e Endpoints) CreateDocument(userID string, document *pb.Document) (*pb.Document, error) {
+func (e Endpoints) CreateDocument(ctx context.Context, userID string, document *pb.Document) (*pb.Document, error) {
 	req := &pb.CreateDocumentRequest{
 		UserId:   userID,
 		Document: document,
@@ -29,7 +29,7 @@ func (e Endpoints) CreateDocument(userID string, document *pb.Document) (*pb.Doc
 	return res.Document, toError(res.Err)
 }
 
-func (e Endpoints) FindDocuments(userID string) ([]*pb.Document, error) {
+func (e Endpoints) FindDocuments(ctx context.Context, userID string) ([]*pb.Document, error) {
 	req := &pb.FindDocumentsRequest{
 		UserId: userID,
 	}
@@ -41,7 +41,7 @@ func (e Endpoints) FindDocuments(userID string) ([]*pb.Document, error) {
 	return res.Documents, toError(res.Err)
 }
 
-func (e Endpoints) FindDocumentsByID(userID string, ids []string) ([]*pb.Document, error) {
+func (e Endpoints) FindDocumentsByID(ctx context.Context, userID string, ids []string) ([]*pb.Document, error) {
 	req := &pb.FindDocumentsByIdRequest{
 		UserId: userID,
 		Ids:    ids,
@@ -54,7 +54,7 @@ func (e Endpoints) FindDocumentsByID(userID string, ids []string) ([]*pb.Documen
 	return res.Documents, toError(res.Err)
 }
 
-func (e Endpoints) ReplaceDocumentByID(userID string, id string, document *pb.Document) (*pb.Document, error) {
+func (e Endpoints) ReplaceDocumentByID(ctx context.Context, userID string, id string, document *pb.Document) (*pb.Document, error) {
 	req := &pb.ReplaceDocumentByIdRequest{
 		UserId:   userID,
 		Id:       id,
@@ -68,7 +68,7 @@ func (e Endpoints) ReplaceDocumentByID(userID string, id string, document *pb.Do
 	return res.Document, toError(res.Err)
 }
 
-func (e Endpoints) DeleteDocumentsByID(userID string, ids []string) ([]*pb.Document, error) {
+func (e Endpoints) DeleteDocumentsByID(ctx context.Context, userID string, ids []string) ([]*pb.Document, error) {
 	req := &pb.DeleteDocumentsByIdRequest{
 		UserId: userID,
 		Ids:    ids,
@@ -82,9 +82,9 @@ func (e Endpoints) DeleteDocumentsByID(userID string, ids []string) ([]*pb.Docum
 }
 
 func MakeCreateDocumentEndpoint(s Service) endpoint.Endpoint {
-	return func(_ context.Context, request interface{}) (interface{}, error) {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*pb.CreateDocumentRequest)
-		document, err := s.CreateDocument(req.UserId, req.Document)
+		document, err := s.CreateDocument(ctx, req.UserId, req.Document)
 		return &pb.CreateDocumentReply{
 			Document: document,
 			Err:      toPBError(err),
@@ -93,9 +93,9 @@ func MakeCreateDocumentEndpoint(s Service) endpoint.Endpoint {
 }
 
 func MakeFindDocumentsEndpoint(s Service) endpoint.Endpoint {
-	return func(_ context.Context, request interface{}) (interface{}, error) {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*pb.FindDocumentsRequest)
-		documents, err := s.FindDocuments(req.UserId)
+		documents, err := s.FindDocuments(ctx, req.UserId)
 		return &pb.FindDocumentsReply{
 			Documents: documents,
 			Err:       toPBError(err),
@@ -104,9 +104,9 @@ func MakeFindDocumentsEndpoint(s Service) endpoint.Endpoint {
 }
 
 func MakeFindDocumentsByIDEndpoint(s Service) endpoint.Endpoint {
-	return func(_ context.Context, request interface{}) (interface{}, error) {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*pb.FindDocumentsByIdRequest)
-		documents, err := s.FindDocumentsByID(req.UserId, req.Ids)
+		documents, err := s.FindDocumentsByID(ctx, req.UserId, req.Ids)
 		return &pb.FindDocumentsByIdReply{
 			Documents: documents,
 			Err:       toPBError(err),
@@ -115,9 +115,9 @@ func MakeFindDocumentsByIDEndpoint(s Service) endpoint.Endpoint {
 }
 
 func MakeReplaceDocumentByIDEndpoint(s Service) endpoint.Endpoint {
-	return func(_ context.Context, request interface{}) (interface{}, error) {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*pb.ReplaceDocumentByIdRequest)
-		document, err := s.ReplaceDocumentByID(req.UserId, req.Id, req.Document)
+		document, err := s.ReplaceDocumentByID(ctx, req.UserId, req.Id, req.Document)
 		return &pb.ReplaceDocumentByIdReply{
 			Document: document,
 			Err:      toPBError(err),
@@ -126,9 +126,9 @@ func MakeReplaceDocumentByIDEndpoint(s Service) endpoint.Endpoint {
 }
 
 func MakeDeleteDocumentsByIDEndpoint(s Service) endpoint.Endpoint {
-	return func(_ context.Context, request interface{}) (interface{}, error) {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*pb.DeleteDocumentsByIdRequest)
-		documents, err := s.DeleteDocumentsByID(req.UserId, req.Ids)
+		documents, err := s.DeleteDocumentsByID(ctx, req.UserId, req.Ids)
 		return &pb.DeleteDocumentsByIdReply{
 			Documents: documents,
 			Err:       toPBError(err),
