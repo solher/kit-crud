@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"net"
 	"os"
 
@@ -68,16 +67,18 @@ func main() {
 
 	ln, err := net.Listen("tcp", *grpcAddr)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
+		logger.Log("err", err)
+		os.Exit(1)
 	}
 
 	srv := library.MakeGRPCServer(ctx, endpoints)
 	s := grpc.NewServer()
 	pb.RegisterLibraryServer(s, srv)
 
+	logger.Log("msg", "listening on "+*grpcAddr+" (gRPC)")
+
 	if err := s.Serve(ln); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
+		logger.Log("err", err)
+		os.Exit(1)
 	}
 }
