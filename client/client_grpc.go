@@ -87,57 +87,78 @@ func grpcFactory(makeEndpoint func(Service) endpoint.Endpoint, tracer stdopentra
 
 func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.Logger) Service {
 	opts := []grpctransport.ClientOption{}
-	e := Endpoints{}
 
-	e.CreateDocumentEndpoint = grpctransport.NewClient(
-		conn,
-		"Library",
-		"CreateDocument",
-		nopCodec,
-		nopCodec,
-		pb.CreateDocumentReply{},
-		append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "CreateDocument", logger)))...,
-	).Endpoint()
+	var createDocumentEndpoint endpoint.Endpoint
+	{
+		createDocumentEndpoint = grpctransport.NewClient(
+			conn,
+			"Library",
+			"CreateDocument",
+			nopCodec,
+			nopCodec,
+			pb.CreateDocumentReply{},
+			append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "CreateDocument", logger)))...,
+		).Endpoint()
+		createDocumentEndpoint = opentracing.TraceClient(tracer, "CreateDocument")(createDocumentEndpoint)
+	}
+	var findDocumentsEndpoint endpoint.Endpoint
+	{
+		findDocumentsEndpoint = grpctransport.NewClient(
+			conn,
+			"Library",
+			"FindDocuments",
+			nopCodec,
+			nopCodec,
+			pb.FindDocumentsReply{},
+			append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "FindDocuments", logger)))...,
+		).Endpoint()
+		findDocumentsEndpoint = opentracing.TraceClient(tracer, "FindDocuments")(findDocumentsEndpoint)
+	}
+	var findDocumentsByIDEndpoint endpoint.Endpoint
+	{
+		findDocumentsByIDEndpoint = grpctransport.NewClient(
+			conn,
+			"Library",
+			"FindDocumentsById",
+			nopCodec,
+			nopCodec,
+			pb.FindDocumentsByIdReply{},
+			append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "FindDocumentsById", logger)))...,
+		).Endpoint()
+		findDocumentsByIDEndpoint = opentracing.TraceClient(tracer, "FindDocumentsById")(findDocumentsByIDEndpoint)
+	}
+	var replaceDocumentByIDEndpoint endpoint.Endpoint
+	{
+		replaceDocumentByIDEndpoint = grpctransport.NewClient(
+			conn,
+			"Library",
+			"ReplaceDocumentById",
+			nopCodec,
+			nopCodec,
+			pb.ReplaceDocumentByIdReply{},
+			append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "ReplaceDocumentById", logger)))...,
+		).Endpoint()
+		replaceDocumentByIDEndpoint = opentracing.TraceClient(tracer, "ReplaceDocumentById")(replaceDocumentByIDEndpoint)
+	}
+	var deleteDocumentsByIDEndpoint endpoint.Endpoint
+	{
+		deleteDocumentsByIDEndpoint = grpctransport.NewClient(
+			conn,
+			"Library",
+			"DeleteDocumentsById",
+			nopCodec,
+			nopCodec,
+			pb.DeleteDocumentsByIdReply{},
+			append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "DeleteDocumentsById", logger)))...,
+		).Endpoint()
+		deleteDocumentsByIDEndpoint = opentracing.TraceClient(tracer, "DeleteDocumentsById")(deleteDocumentsByIDEndpoint)
+	}
 
-	e.FindDocumentsEndpoint = grpctransport.NewClient(
-		conn,
-		"Library",
-		"FindDocuments",
-		nopCodec,
-		nopCodec,
-		pb.FindDocumentsReply{},
-		append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "FindDocuments", logger)))...,
-	).Endpoint()
-
-	e.FindDocumentsByIDEndpoint = grpctransport.NewClient(
-		conn,
-		"Library",
-		"FindDocumentsById",
-		nopCodec,
-		nopCodec,
-		pb.FindDocumentsByIdReply{},
-		append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "FindDocumentsById", logger)))...,
-	).Endpoint()
-
-	e.ReplaceDocumentByIDEndpoint = grpctransport.NewClient(
-		conn,
-		"Library",
-		"ReplaceDocumentById",
-		nopCodec,
-		nopCodec,
-		pb.ReplaceDocumentByIdReply{},
-		append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "ReplaceDocumentById", logger)))...,
-	).Endpoint()
-
-	e.DeleteDocumentsByIDEndpoint = grpctransport.NewClient(
-		conn,
-		"Library",
-		"DeleteDocumentsById",
-		nopCodec,
-		nopCodec,
-		pb.DeleteDocumentsByIdReply{},
-		append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "DeleteDocumentsById", logger)))...,
-	).Endpoint()
-
-	return e
+	return Endpoints{
+		CreateDocumentEndpoint:      createDocumentEndpoint,
+		FindDocumentsEndpoint:       findDocumentsEndpoint,
+		FindDocumentsByIDEndpoint:   findDocumentsByIDEndpoint,
+		ReplaceDocumentByIDEndpoint: replaceDocumentByIDEndpoint,
+		DeleteDocumentsByIDEndpoint: deleteDocumentsByIDEndpoint,
+	}
 }

@@ -50,7 +50,7 @@ func main() {
 				os.Exit(1)
 			}
 			tracer, err = zipkin.NewTracer(
-				zipkin.NewRecorder(collector, false, "kit-crud:8082", "App"),
+				zipkin.NewRecorder(collector, false, "kit-crud:8082", "Library"),
 			)
 			if err != nil {
 				logger.Log("err", err)
