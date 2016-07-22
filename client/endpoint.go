@@ -21,7 +21,7 @@ func (e Endpoints) CreateDocument(ctx context.Context, userID string, document *
 		UserId:   userID,
 		Document: document,
 	}
-	response, err := e.CreateDocumentEndpoint(context.Background(), req)
+	response, err := e.CreateDocumentEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (e Endpoints) FindDocuments(ctx context.Context, userID string) ([]*pb.Docu
 	req := &pb.FindDocumentsRequest{
 		UserId: userID,
 	}
-	response, err := e.FindDocumentsEndpoint(context.Background(), req)
+	response, err := e.FindDocumentsEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (e Endpoints) FindDocumentsByID(ctx context.Context, userID string, ids []s
 		UserId: userID,
 		Ids:    ids,
 	}
-	response, err := e.FindDocumentsByIDEndpoint(context.Background(), req)
+	response, err := e.FindDocumentsByIDEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (e Endpoints) ReplaceDocumentByID(ctx context.Context, userID string, id st
 		Id:       id,
 		Document: document,
 	}
-	response, err := e.ReplaceDocumentByIDEndpoint(context.Background(), req)
+	response, err := e.ReplaceDocumentByIDEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (e Endpoints) DeleteDocumentsByID(ctx context.Context, userID string, ids [
 		UserId: userID,
 		Ids:    ids,
 	}
-	response, err := e.DeleteDocumentsByIDEndpoint(context.Background(), req)
+	response, err := e.DeleteDocumentsByIDEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}

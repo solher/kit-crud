@@ -7,7 +7,9 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/sd"
+	"github.com/go-kit/kit/tracing/opentracing"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
+	stdopentracing "github.com/opentracing/opentracing-go"
 	"github.com/solher/kit-crud/pb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -17,12 +19,12 @@ var nopCodec = func(_ context.Context, r interface{}) (interface{}, error) {
 	return r, nil
 }
 
-func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
+func NewGRPC(consulAddr string, tracer stdopentracing.Tracer, logger log.Logger) (Service, error) {
 	var (
 		endpoints = Endpoints{}
 	)
 	{
-		factory := grpcFactory(MakeCreateDocumentEndpoint)
+		factory := grpcFactory(MakeCreateDocumentEndpoint, tracer, logger)
 		endpoint, _, err := factory(consulAddr)
 		// defer conn.Close()
 		if err != nil {
@@ -31,7 +33,7 @@ func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
 		endpoints.CreateDocumentEndpoint = endpoint
 	}
 	{
-		factory := grpcFactory(MakeFindDocumentsEndpoint)
+		factory := grpcFactory(MakeFindDocumentsEndpoint, tracer, logger)
 		endpoint, _, err := factory(consulAddr)
 		// defer conn.Close()
 		if err != nil {
@@ -40,7 +42,7 @@ func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
 		endpoints.FindDocumentsEndpoint = endpoint
 	}
 	{
-		factory := grpcFactory(MakeFindDocumentsByIDEndpoint)
+		factory := grpcFactory(MakeFindDocumentsByIDEndpoint, tracer, logger)
 		endpoint, _, err := factory(consulAddr)
 		// defer conn.Close()
 		if err != nil {
@@ -49,7 +51,7 @@ func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
 		endpoints.FindDocumentsByIDEndpoint = endpoint
 	}
 	{
-		factory := grpcFactory(MakeReplaceDocumentByIDEndpoint)
+		factory := grpcFactory(MakeReplaceDocumentByIDEndpoint, tracer, logger)
 		endpoint, _, err := factory(consulAddr)
 		// defer conn.Close()
 		if err != nil {
@@ -58,7 +60,7 @@ func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
 		endpoints.ReplaceDocumentByIDEndpoint = endpoint
 	}
 	{
-		factory := grpcFactory(MakeDeleteDocumentsByIDEndpoint)
+		factory := grpcFactory(MakeDeleteDocumentsByIDEndpoint, tracer, logger)
 		endpoint, _, err := factory(consulAddr)
 		// defer conn.Close()
 		if err != nil {
@@ -70,20 +72,20 @@ func NewGRPC(consulAddr string, logger log.Logger) (Service, error) {
 	return endpoints, nil
 }
 
-func grpcFactory(makeEndpoint func(Service) endpoint.Endpoint) sd.Factory {
+func grpcFactory(makeEndpoint func(Service) endpoint.Endpoint, tracer stdopentracing.Tracer, logger log.Logger) sd.Factory {
 	return func(instance string) (endpoint.Endpoint, io.Closer, error) {
 		conn, err := grpc.Dial(instance, grpc.WithInsecure())
 		if err != nil {
 			return nil, nil, err
 		}
-		service := grpcClient(conn)
+		service := grpcClient(conn, tracer, logger)
 		endpoint := makeEndpoint(service)
 
 		return endpoint, conn, nil
 	}
 }
 
-func grpcClient(conn *grpc.ClientConn) Service {
+func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.Logger) Service {
 	opts := []grpctransport.ClientOption{}
 	e := Endpoints{}
 
@@ -94,7 +96,7 @@ func grpcClient(conn *grpc.ClientConn) Service {
 		nopCodec,
 		nopCodec,
 		pb.CreateDocumentReply{},
-		opts...,
+		append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "CreateDocument", logger)))...,
 	).Endpoint()
 
 	e.FindDocumentsEndpoint = grpctransport.NewClient(
@@ -104,7 +106,7 @@ func grpcClient(conn *grpc.ClientConn) Service {
 		nopCodec,
 		nopCodec,
 		pb.FindDocumentsReply{},
-		opts...,
+		append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "FindDocuments", logger)))...,
 	).Endpoint()
 
 	e.FindDocumentsByIDEndpoint = grpctransport.NewClient(
@@ -114,7 +116,7 @@ func grpcClient(conn *grpc.ClientConn) Service {
 		nopCodec,
 		nopCodec,
 		pb.FindDocumentsByIdReply{},
-		opts...,
+		append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "FindDocumentsById", logger)))...,
 	).Endpoint()
 
 	e.ReplaceDocumentByIDEndpoint = grpctransport.NewClient(
@@ -124,7 +126,7 @@ func grpcClient(conn *grpc.ClientConn) Service {
 		nopCodec,
 		nopCodec,
 		pb.ReplaceDocumentByIdReply{},
-		opts...,
+		append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "ReplaceDocumentById", logger)))...,
 	).Endpoint()
 
 	e.DeleteDocumentsByIDEndpoint = grpctransport.NewClient(
@@ -134,7 +136,7 @@ func grpcClient(conn *grpc.ClientConn) Service {
 		nopCodec,
 		nopCodec,
 		pb.DeleteDocumentsByIdReply{},
-		opts...,
+		append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "DeleteDocumentsById", logger)))...,
 	).Endpoint()
 
 	return e

@@ -19,4 +19,4 @@ WORKDIR /
 
 USER app
 EXPOSE 8082
-CMD $APP_NAME
+CMD $APP_NAME -zipkin.addr="zipkin:9410"

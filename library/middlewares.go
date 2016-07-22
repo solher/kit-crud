@@ -3,6 +3,8 @@ package library
 import (
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/go-kit/kit/log"
 )
 
@@ -22,7 +24,7 @@ type serviceLoggingMiddleware struct {
 	next   Service
 }
 
-func (mw serviceLoggingMiddleware) CreateDocument(userID string, document *Document) (new *Document, err error) {
+func (mw serviceLoggingMiddleware) CreateDocument(ctx context.Context, userID string, document *Document) (new *Document, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "CreateDocument",
@@ -33,10 +35,10 @@ func (mw serviceLoggingMiddleware) CreateDocument(userID string, document *Docum
 			"took", time.Since(begin),
 		)
 	}(time.Now())
-	return mw.next.CreateDocument(userID, document)
+	return mw.next.CreateDocument(ctx, userID, document)
 }
 
-func (mw serviceLoggingMiddleware) FindDocuments(userID string) (documents []Document, err error) {
+func (mw serviceLoggingMiddleware) FindDocuments(ctx context.Context, userID string) (documents []Document, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "FindDocuments",
@@ -46,10 +48,10 @@ func (mw serviceLoggingMiddleware) FindDocuments(userID string) (documents []Doc
 			"took", time.Since(begin),
 		)
 	}(time.Now())
-	return mw.next.FindDocuments(userID)
+	return mw.next.FindDocuments(ctx, userID)
 }
 
-func (mw serviceLoggingMiddleware) FindDocumentsByID(userID string, ids []string) (documents []Document, err error) {
+func (mw serviceLoggingMiddleware) FindDocumentsByID(ctx context.Context, userID string, ids []string) (documents []Document, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "FindDocumentsByID",
@@ -60,10 +62,10 @@ func (mw serviceLoggingMiddleware) FindDocumentsByID(userID string, ids []string
 			"took", time.Since(begin),
 		)
 	}(time.Now())
-	return mw.next.FindDocumentsByID(userID, ids)
+	return mw.next.FindDocumentsByID(ctx, userID, ids)
 }
 
-func (mw serviceLoggingMiddleware) ReplaceDocumentByID(userID string, id string, document *Document) (new *Document, err error) {
+func (mw serviceLoggingMiddleware) ReplaceDocumentByID(ctx context.Context, userID string, id string, document *Document) (new *Document, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "ReplaceDocumentByID",
@@ -75,10 +77,10 @@ func (mw serviceLoggingMiddleware) ReplaceDocumentByID(userID string, id string,
 			"took", time.Since(begin),
 		)
 	}(time.Now())
-	return mw.next.ReplaceDocumentByID(userID, id, document)
+	return mw.next.ReplaceDocumentByID(ctx, userID, id, document)
 }
 
-func (mw serviceLoggingMiddleware) DeleteDocumentsByID(userID string, ids []string) (documents []Document, err error) {
+func (mw serviceLoggingMiddleware) DeleteDocumentsByID(ctx context.Context, userID string, ids []string) (documents []Document, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "DeleteDocumentsByID",
@@ -89,5 +91,5 @@ func (mw serviceLoggingMiddleware) DeleteDocumentsByID(userID string, ids []stri
 			"took", time.Since(begin),
 		)
 	}(time.Now())
-	return mw.next.DeleteDocumentsByID(userID, ids)
+	return mw.next.DeleteDocumentsByID(ctx, userID, ids)
 }
