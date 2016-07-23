@@ -79,22 +79,22 @@ func main() {
 	var findDocumentsEndpoint endpoint.Endpoint
 	{
 		findDocumentsEndpoint = library.MakeFindDocumentsEndpoint(service)
-		findDocumentsEndpoint = opentracing.TraceServer(tracer, "FindDocuments")(findDocumentsEndpoint)
+		// findDocumentsEndpoint = opentracing.TraceServer(tracer, "FindDocuments")(findDocumentsEndpoint)
 	}
 	var findDocumentsByIDEndpoint endpoint.Endpoint
 	{
 		findDocumentsByIDEndpoint = library.MakeFindDocumentsByIDEndpoint(service)
-		findDocumentsByIDEndpoint = opentracing.TraceServer(tracer, "FindDocumentsByID")(findDocumentsByIDEndpoint)
+		// findDocumentsByIDEndpoint = opentracing.TraceServer(tracer, "FindDocumentsByID")(findDocumentsByIDEndpoint)
 	}
 	var replaceDocumentByIDEndpoint endpoint.Endpoint
 	{
 		replaceDocumentByIDEndpoint = library.MakeReplaceDocumentByIDEndpoint(service)
-		replaceDocumentByIDEndpoint = opentracing.TraceServer(tracer, "ReplaceDocumentByID")(replaceDocumentByIDEndpoint)
+		// replaceDocumentByIDEndpoint = opentracing.TraceServer(tracer, "ReplaceDocumentByID")(replaceDocumentByIDEndpoint)
 	}
 	var deleteDocumentsByIDEndpoint endpoint.Endpoint
 	{
 		deleteDocumentsByIDEndpoint = library.MakeDeleteDocumentsByIDEndpoint(service)
-		deleteDocumentsByIDEndpoint = opentracing.TraceServer(tracer, "DeleteDocumentsByID")(deleteDocumentsByIDEndpoint)
+		// deleteDocumentsByIDEndpoint = opentracing.TraceServer(tracer, "DeleteDocumentsByID")(deleteDocumentsByIDEndpoint)
 	}
 	endpoints := library.Endpoints{
 		CreateDocumentEndpoint:      createDocumentEndpoint,
