@@ -97,7 +97,7 @@ func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.
 			nopCodec,
 			nopCodec,
 			pb.CreateDocumentReply{},
-			append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "CreateDocument", logger)))...,
+			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
 		).Endpoint()
 		createDocumentEndpoint = opentracing.TraceClient(tracer, "CreateDocument")(createDocumentEndpoint)
 	}
@@ -110,7 +110,7 @@ func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.
 			nopCodec,
 			nopCodec,
 			pb.FindDocumentsReply{},
-			append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "FindDocuments", logger)))...,
+			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
 		).Endpoint()
 		findDocumentsEndpoint = opentracing.TraceClient(tracer, "FindDocuments")(findDocumentsEndpoint)
 	}
@@ -123,7 +123,7 @@ func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.
 			nopCodec,
 			nopCodec,
 			pb.FindDocumentsByIdReply{},
-			append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "FindDocumentsById", logger)))...,
+			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
 		).Endpoint()
 		findDocumentsByIDEndpoint = opentracing.TraceClient(tracer, "FindDocumentsById")(findDocumentsByIDEndpoint)
 	}
@@ -136,7 +136,7 @@ func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.
 			nopCodec,
 			nopCodec,
 			pb.ReplaceDocumentByIdReply{},
-			append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "ReplaceDocumentById", logger)))...,
+			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
 		).Endpoint()
 		replaceDocumentByIDEndpoint = opentracing.TraceClient(tracer, "ReplaceDocumentById")(replaceDocumentByIDEndpoint)
 	}
@@ -149,7 +149,7 @@ func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.
 			nopCodec,
 			nopCodec,
 			pb.DeleteDocumentsByIdReply{},
-			append(opts, grpctransport.ClientBefore(opentracing.FromGRPCRequest(tracer, "DeleteDocumentsById", logger)))...,
+			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
 		).Endpoint()
 		deleteDocumentsByIDEndpoint = opentracing.TraceClient(tracer, "DeleteDocumentsById")(deleteDocumentsByIDEndpoint)
 	}
