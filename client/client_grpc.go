@@ -78,14 +78,14 @@ func grpcFactory(makeEndpoint func(Service) endpoint.Endpoint, tracer stdopentra
 		if err != nil {
 			return nil, nil, err
 		}
-		service := grpcClient(conn, tracer, logger)
+		service := grpcClient(instance, conn, tracer, logger)
 		endpoint := makeEndpoint(service)
 
 		return endpoint, conn, nil
 	}
 }
 
-func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.Logger) Service {
+func grpcClient(target string, conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.Logger) Service {
 	opts := []grpctransport.ClientOption{}
 
 	var createDocumentEndpoint endpoint.Endpoint
@@ -99,6 +99,7 @@ func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.
 			pb.CreateDocumentReply{},
 			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
 		).Endpoint()
+		createDocumentEndpoint = AddGRPCClientAnnotations(target)(createDocumentEndpoint)
 		createDocumentEndpoint = opentracing.TraceClient(tracer, "CreateDocument")(createDocumentEndpoint)
 	}
 	var findDocumentsEndpoint endpoint.Endpoint
@@ -112,6 +113,7 @@ func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.
 			pb.FindDocumentsReply{},
 			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
 		).Endpoint()
+		findDocumentsEndpoint = AddGRPCClientAnnotations(target)(findDocumentsEndpoint)
 		findDocumentsEndpoint = opentracing.TraceClient(tracer, "FindDocuments")(findDocumentsEndpoint)
 	}
 	var findDocumentsByIDEndpoint endpoint.Endpoint
@@ -125,6 +127,7 @@ func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.
 			pb.FindDocumentsByIdReply{},
 			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
 		).Endpoint()
+		findDocumentsByIDEndpoint = AddGRPCClientAnnotations(target)(findDocumentsByIDEndpoint)
 		findDocumentsByIDEndpoint = opentracing.TraceClient(tracer, "FindDocumentsById")(findDocumentsByIDEndpoint)
 	}
 	var replaceDocumentByIDEndpoint endpoint.Endpoint
@@ -138,6 +141,7 @@ func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.
 			pb.ReplaceDocumentByIdReply{},
 			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
 		).Endpoint()
+		replaceDocumentByIDEndpoint = AddGRPCClientAnnotations(target)(replaceDocumentByIDEndpoint)
 		replaceDocumentByIDEndpoint = opentracing.TraceClient(tracer, "ReplaceDocumentById")(replaceDocumentByIDEndpoint)
 	}
 	var deleteDocumentsByIDEndpoint endpoint.Endpoint
@@ -151,6 +155,7 @@ func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.
 			pb.DeleteDocumentsByIdReply{},
 			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
 		).Endpoint()
+		deleteDocumentsByIDEndpoint = AddGRPCClientAnnotations(target)(deleteDocumentsByIDEndpoint)
 		deleteDocumentsByIDEndpoint = opentracing.TraceClient(tracer, "DeleteDocumentsById")(deleteDocumentsByIDEndpoint)
 	}
 
@@ -161,4 +166,49 @@ func grpcClient(conn *grpc.ClientConn, tracer stdopentracing.Tracer, logger log.
 		ReplaceDocumentByIDEndpoint: replaceDocumentByIDEndpoint,
 		DeleteDocumentsByIDEndpoint: deleteDocumentsByIDEndpoint,
 	}
+}
+
+func AddGRPCClientAnnotations(target string) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (interface{}, error) {
+			span := stdopentracing.SpanFromContext(ctx)
+			if span != nil {
+				span = span.SetTag("transport", "gRPC")
+				span = span.SetTag("target", target)
+				ctx = stdopentracing.ContextWithSpan(ctx, span)
+			}
+			response, err := next(ctx, request)
+			if err != nil && span != nil {
+				span = span.SetTag("error", err)
+				ctx = stdopentracing.ContextWithSpan(ctx, span)
+				return response, err
+			}
+			err = errorer(response)
+			if err != nil && span != nil {
+				span = span.SetTag("error", err)
+				ctx = stdopentracing.ContextWithSpan(ctx, span)
+				return response, nil
+			}
+			return response, nil
+		}
+	}
+}
+
+func errorer(response interface{}) error {
+	var str string
+	switch res := response.(type) {
+	case *pb.CreateDocumentReply:
+		str = res.Err
+	case *pb.FindDocumentsReply:
+		str = res.Err
+	case *pb.FindDocumentsByIdReply:
+		str = res.Err
+	case *pb.ReplaceDocumentByIdReply:
+		str = res.Err
+	case *pb.DeleteDocumentsByIdReply:
+		str = res.Err
+	default:
+		str = "unexpected response type"
+	}
+	return toError(str)
 }
