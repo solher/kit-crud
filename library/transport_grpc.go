@@ -2,6 +2,7 @@ package library
 
 import (
 	"github.com/go-kit/kit/log"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/go-kit/kit/tracing/opentracing"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
@@ -19,36 +20,82 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, tracer stdopentrac
 			endpoints.CreateDocumentEndpoint,
 			DecodeGRPCCreateDocumentRequest,
 			EncodeGRPCCreateDocumentResponse,
-			append(opts, grpctransport.ServerBefore(opentracing.FromGRPCRequest(tracer, "CreateDocument", logger)))...,
+			append(
+				opts,
+				grpctransport.ServerBefore(
+					opentracing.FromGRPCRequest(tracer, "CreateDocument", logger),
+					AddGRPCAnnotations,
+				),
+			)...,
 		),
 		findDocuments: grpctransport.NewServer(
 			ctx,
 			endpoints.FindDocumentsEndpoint,
 			DecodeGRPCFindDocumentsRequest,
 			EncodeGRPCFindDocumentsResponse,
-			append(opts, grpctransport.ServerBefore(opentracing.FromGRPCRequest(tracer, "FindDocuments", logger)))...,
+			append(
+				opts,
+				grpctransport.ServerBefore(
+					opentracing.FromGRPCRequest(tracer, "FindDocuments", logger),
+					AddGRPCAnnotations,
+				),
+				grpctransport.ServerAfter(FinishSpan),
+			)...,
 		),
 		findDocumentsByID: grpctransport.NewServer(
 			ctx,
 			endpoints.FindDocumentsByIDEndpoint,
 			DecodeGRPCFindDocumentsByIDRequest,
 			EncodeGRPCFindDocumentsByIDResponse,
-			append(opts, grpctransport.ServerBefore(opentracing.FromGRPCRequest(tracer, "FindDocumentsByID", logger)))...,
+			append(
+				opts,
+				grpctransport.ServerBefore(
+					opentracing.FromGRPCRequest(tracer, "FindDocumentsByID", logger),
+					AddGRPCAnnotations,
+				),
+			)...,
 		),
 		replaceDocumentByID: grpctransport.NewServer(
 			ctx,
 			endpoints.ReplaceDocumentByIDEndpoint,
 			DecodeGRPCReplaceDocumentByIDRequest,
 			EncodeGRPCReplaceDocumentByIDResponse,
-			append(opts, grpctransport.ServerBefore(opentracing.FromGRPCRequest(tracer, "ReplaceDocumentByID", logger)))...,
+			append(
+				opts,
+				grpctransport.ServerBefore(
+					opentracing.FromGRPCRequest(tracer, "ReplaceDocumentByID", logger),
+					AddGRPCAnnotations,
+				),
+			)...,
 		),
 		deleteDocumentsByID: grpctransport.NewServer(
 			ctx,
 			endpoints.DeleteDocumentsByIDEndpoint,
 			DecodeGRPCDeleteDocumentsByIDRequest,
 			EncodeGRPCDeleteDocumentsByIDResponse,
-			append(opts, grpctransport.ServerBefore(opentracing.FromGRPCRequest(tracer, "DeleteDocumentsByID", logger)))...,
+			append(
+				opts,
+				grpctransport.ServerBefore(
+					opentracing.FromGRPCRequest(tracer, "DeleteDocumentsByID", logger),
+					AddGRPCAnnotations,
+				),
+			)...,
 		),
+	}
+}
+
+func AddGRPCAnnotations(ctx context.Context, md *metadata.MD) context.Context {
+	span := stdopentracing.SpanFromContext(ctx)
+	if span == nil {
+		return ctx
+	}
+	span = span.SetTag("transport", "gRPC")
+	return stdopentracing.ContextWithSpan(ctx, span)
+}
+
+func FinishSpan(ctx context.Context, md *metadata.MD) {
+	if span := stdopentracing.SpanFromContext(ctx); span != nil {
+		span.Finish()
 	}
 }
 

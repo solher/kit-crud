@@ -79,7 +79,8 @@ func main() {
 	var findDocumentsEndpoint endpoint.Endpoint
 	{
 		findDocumentsEndpoint = library.MakeFindDocumentsEndpoint(service)
-		findDocumentsEndpoint = opentracing.TraceServer(tracer, "FindDocuments")(findDocumentsEndpoint)
+		findDocumentsEndpoint = TraceTransportBoundaries(findDocumentsEndpoint)
+		// findDocumentsEndpoint = opentracing.TraceServer(tracer, "FindDocuments")(findDocumentsEndpoint)
 	}
 	var findDocumentsByIDEndpoint endpoint.Endpoint
 	{
@@ -122,5 +123,19 @@ func main() {
 	if err := s.Serve(ln); err != nil {
 		logger.Log("err", err)
 		os.Exit(1)
+	}
+}
+
+func TraceTransportBoundaries(next endpoint.Endpoint) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		span := stdopentracing.SpanFromContext(ctx)
+		if span != nil {
+			span.LogEvent("Transport domain ends")
+			ctx = stdopentracing.ContextWithSpan(ctx, span)
+			defer func() {
+				span.LogEvent("Transport domain begins")
+			}()
+		}
+		return next(ctx, request)
 	}
 }
