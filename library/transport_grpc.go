@@ -24,8 +24,9 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, tracer stdopentrac
 				opts,
 				grpctransport.ServerBefore(
 					opentracing.FromGRPCRequest(tracer, "CreateDocument", logger),
-					AddGRPCAnnotations,
+					addGRPCAnnotations,
 				),
+				grpctransport.ServerAfter(FinishSpan),
 			)...,
 		),
 		findDocuments: grpctransport.NewServer(
@@ -37,7 +38,7 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, tracer stdopentrac
 				opts,
 				grpctransport.ServerBefore(
 					opentracing.FromGRPCRequest(tracer, "FindDocuments", logger),
-					AddGRPCAnnotations,
+					addGRPCAnnotations,
 				),
 				grpctransport.ServerAfter(FinishSpan),
 			)...,
@@ -51,8 +52,9 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, tracer stdopentrac
 				opts,
 				grpctransport.ServerBefore(
 					opentracing.FromGRPCRequest(tracer, "FindDocumentsByID", logger),
-					AddGRPCAnnotations,
+					addGRPCAnnotations,
 				),
+				grpctransport.ServerAfter(FinishSpan),
 			)...,
 		),
 		replaceDocumentByID: grpctransport.NewServer(
@@ -64,8 +66,9 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, tracer stdopentrac
 				opts,
 				grpctransport.ServerBefore(
 					opentracing.FromGRPCRequest(tracer, "ReplaceDocumentByID", logger),
-					AddGRPCAnnotations,
+					addGRPCAnnotations,
 				),
+				grpctransport.ServerAfter(FinishSpan),
 			)...,
 		),
 		deleteDocumentsByID: grpctransport.NewServer(
@@ -77,20 +80,20 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, tracer stdopentrac
 				opts,
 				grpctransport.ServerBefore(
 					opentracing.FromGRPCRequest(tracer, "DeleteDocumentsByID", logger),
-					AddGRPCAnnotations,
+					addGRPCAnnotations,
 				),
+				grpctransport.ServerAfter(FinishSpan),
 			)...,
 		),
 	}
 }
 
-func AddGRPCAnnotations(ctx context.Context, md *metadata.MD) context.Context {
-	span := stdopentracing.SpanFromContext(ctx)
-	if span == nil {
-		return ctx
+func addGRPCAnnotations(ctx context.Context, md *metadata.MD) context.Context {
+	if span := stdopentracing.SpanFromContext(ctx); span != nil {
+		span = span.SetTag("transport", "gRPC")
+		ctx = stdopentracing.ContextWithSpan(ctx, span)
 	}
-	span = span.SetTag("transport", "gRPC")
-	return stdopentracing.ContextWithSpan(ctx, span)
+	return ctx
 }
 
 func FinishSpan(ctx context.Context, md *metadata.MD) {

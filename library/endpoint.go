@@ -5,6 +5,10 @@ import (
 	"golang.org/x/net/context"
 )
 
+type errorer interface {
+	error() error
+}
+
 type Endpoints struct {
 	CreateDocumentEndpoint      endpoint.Endpoint
 	FindDocumentsEndpoint       endpoint.Endpoint
@@ -18,7 +22,7 @@ func (e Endpoints) CreateDocument(ctx context.Context, userID string, document *
 		UserID:   userID,
 		Document: document,
 	}
-	res, err := e.CreateDocumentEndpoint(context.Background(), req)
+	res, err := e.CreateDocumentEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +34,7 @@ func (e Endpoints) FindDocuments(ctx context.Context, userID string) ([]Document
 	req := findDocumentsRequest{
 		UserID: userID,
 	}
-	res, err := e.FindDocumentsEndpoint(context.Background(), req)
+	res, err := e.FindDocumentsEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +47,7 @@ func (e Endpoints) FindDocumentsByID(ctx context.Context, userID string, ids []s
 		UserID: userID,
 		IDs:    ids,
 	}
-	res, err := e.FindDocumentsByIDEndpoint(context.Background(), req)
+	res, err := e.FindDocumentsByIDEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +61,7 @@ func (e Endpoints) ReplaceDocumentByID(ctx context.Context, userID string, id st
 		ID:       id,
 		Document: document,
 	}
-	res, err := e.ReplaceDocumentByIDEndpoint(context.Background(), req)
+	res, err := e.ReplaceDocumentByIDEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +74,7 @@ func (e Endpoints) DeleteDocumentsByID(ctx context.Context, userID string, ids [
 		UserID: userID,
 		IDs:    ids,
 	}
-	res, err := e.DeleteDocumentsByIDEndpoint(context.Background(), req)
+	res, err := e.DeleteDocumentsByIDEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -87,6 +91,8 @@ type createDocumentResponse struct {
 	Document *Document
 	Err      error `json:"err"`
 }
+
+func (r *createDocumentResponse) error() error { return r.Err }
 
 func MakeCreateDocumentEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -105,6 +111,8 @@ type findDocumentsResponse struct {
 	Err       error      `json:"err"`
 }
 
+func (r *findDocumentsResponse) error() error { return r.Err }
+
 func MakeFindDocumentsEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(findDocumentsRequest)
@@ -122,6 +130,8 @@ type findDocumentsByIDResponse struct {
 	Documents []Document `json:"documents"`
 	Err       error      `json:"err"`
 }
+
+func (r *findDocumentsByIDResponse) error() error { return r.Err }
 
 func MakeFindDocumentsByIDEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -142,6 +152,8 @@ type replaceDocumentByIDResponse struct {
 	Err      error     `json:"err"`
 }
 
+func (r *replaceDocumentByIDResponse) error() error { return r.Err }
+
 func MakeReplaceDocumentByIDEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(replaceDocumentByIDRequest)
@@ -159,6 +171,8 @@ type deleteDocumentsByIDResponse struct {
 	Documents []Document `json:"documents"`
 	Err       error      `json:"err"`
 }
+
+func (r *deleteDocumentsByIDResponse) error() error { return r.Err }
 
 func MakeDeleteDocumentsByIDEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {

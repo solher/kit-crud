@@ -13,6 +13,7 @@ import (
 	"github.com/solher/kit-crud/pb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 var nopCodec = func(_ context.Context, r interface{}) (interface{}, error) {
@@ -97,9 +98,15 @@ func grpcClient(target string, conn *grpc.ClientConn, tracer stdopentracing.Trac
 			nopCodec,
 			nopCodec,
 			pb.CreateDocumentReply{},
-			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
+			append(
+				opts,
+				grpctransport.ClientBefore(
+					addGRPCAnnotations(target),
+					opentracing.ToGRPCRequest(tracer, logger),
+				),
+			)...,
 		).Endpoint()
-		createDocumentEndpoint = AddGRPCClientAnnotations(target)(createDocumentEndpoint)
+		createDocumentEndpoint = EndpointTracingMiddleware(createDocumentEndpoint)
 		createDocumentEndpoint = opentracing.TraceClient(tracer, "CreateDocument")(createDocumentEndpoint)
 	}
 	var findDocumentsEndpoint endpoint.Endpoint
@@ -111,9 +118,15 @@ func grpcClient(target string, conn *grpc.ClientConn, tracer stdopentracing.Trac
 			nopCodec,
 			nopCodec,
 			pb.FindDocumentsReply{},
-			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
+			append(
+				opts,
+				grpctransport.ClientBefore(
+					addGRPCAnnotations(target),
+					opentracing.ToGRPCRequest(tracer, logger),
+				),
+			)...,
 		).Endpoint()
-		findDocumentsEndpoint = AddGRPCClientAnnotations(target)(findDocumentsEndpoint)
+		findDocumentsEndpoint = EndpointTracingMiddleware(findDocumentsEndpoint)
 		findDocumentsEndpoint = opentracing.TraceClient(tracer, "FindDocuments")(findDocumentsEndpoint)
 	}
 	var findDocumentsByIDEndpoint endpoint.Endpoint
@@ -125,9 +138,15 @@ func grpcClient(target string, conn *grpc.ClientConn, tracer stdopentracing.Trac
 			nopCodec,
 			nopCodec,
 			pb.FindDocumentsByIdReply{},
-			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
+			append(
+				opts,
+				grpctransport.ClientBefore(
+					addGRPCAnnotations(target),
+					opentracing.ToGRPCRequest(tracer, logger),
+				),
+			)...,
 		).Endpoint()
-		findDocumentsByIDEndpoint = AddGRPCClientAnnotations(target)(findDocumentsByIDEndpoint)
+		findDocumentsByIDEndpoint = EndpointTracingMiddleware(findDocumentsByIDEndpoint)
 		findDocumentsByIDEndpoint = opentracing.TraceClient(tracer, "FindDocumentsById")(findDocumentsByIDEndpoint)
 	}
 	var replaceDocumentByIDEndpoint endpoint.Endpoint
@@ -139,9 +158,15 @@ func grpcClient(target string, conn *grpc.ClientConn, tracer stdopentracing.Trac
 			nopCodec,
 			nopCodec,
 			pb.ReplaceDocumentByIdReply{},
-			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
+			append(
+				opts,
+				grpctransport.ClientBefore(
+					addGRPCAnnotations(target),
+					opentracing.ToGRPCRequest(tracer, logger),
+				),
+			)...,
 		).Endpoint()
-		replaceDocumentByIDEndpoint = AddGRPCClientAnnotations(target)(replaceDocumentByIDEndpoint)
+		replaceDocumentByIDEndpoint = EndpointTracingMiddleware(replaceDocumentByIDEndpoint)
 		replaceDocumentByIDEndpoint = opentracing.TraceClient(tracer, "ReplaceDocumentById")(replaceDocumentByIDEndpoint)
 	}
 	var deleteDocumentsByIDEndpoint endpoint.Endpoint
@@ -153,9 +178,15 @@ func grpcClient(target string, conn *grpc.ClientConn, tracer stdopentracing.Trac
 			nopCodec,
 			nopCodec,
 			pb.DeleteDocumentsByIdReply{},
-			append(opts, grpctransport.ClientBefore(opentracing.ToGRPCRequest(tracer, logger)))...,
+			append(
+				opts,
+				grpctransport.ClientBefore(
+					addGRPCAnnotations(target),
+					opentracing.ToGRPCRequest(tracer, logger),
+				),
+			)...,
 		).Endpoint()
-		deleteDocumentsByIDEndpoint = AddGRPCClientAnnotations(target)(deleteDocumentsByIDEndpoint)
+		deleteDocumentsByIDEndpoint = EndpointTracingMiddleware(deleteDocumentsByIDEndpoint)
 		deleteDocumentsByIDEndpoint = opentracing.TraceClient(tracer, "DeleteDocumentsById")(deleteDocumentsByIDEndpoint)
 	}
 
@@ -168,47 +199,13 @@ func grpcClient(target string, conn *grpc.ClientConn, tracer stdopentracing.Trac
 	}
 }
 
-func AddGRPCClientAnnotations(target string) endpoint.Middleware {
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(ctx context.Context, request interface{}) (interface{}, error) {
-			span := stdopentracing.SpanFromContext(ctx)
-			if span != nil {
-				span = span.SetTag("transport", "gRPC")
-				span = span.SetTag("target", target)
-				ctx = stdopentracing.ContextWithSpan(ctx, span)
-			}
-			response, err := next(ctx, request)
-			if err != nil && span != nil {
-				span = span.SetTag("error", err)
-				ctx = stdopentracing.ContextWithSpan(ctx, span)
-				return response, err
-			}
-			err = errorer(response)
-			if err != nil && span != nil {
-				span = span.SetTag("error", err)
-				ctx = stdopentracing.ContextWithSpan(ctx, span)
-				return response, nil
-			}
-			return response, nil
+func addGRPCAnnotations(target string) func(ctx context.Context, md *metadata.MD) context.Context {
+	return func(ctx context.Context, md *metadata.MD) context.Context {
+		if span := stdopentracing.SpanFromContext(ctx); span != nil {
+			span = span.SetTag("transport", "gRPC")
+			span = span.SetTag("target", target)
+			ctx = stdopentracing.ContextWithSpan(ctx, span)
 		}
+		return ctx
 	}
-}
-
-func errorer(response interface{}) error {
-	var str string
-	switch res := response.(type) {
-	case *pb.CreateDocumentReply:
-		str = res.Err
-	case *pb.FindDocumentsReply:
-		str = res.Err
-	case *pb.FindDocumentsByIdReply:
-		str = res.Err
-	case *pb.ReplaceDocumentByIdReply:
-		str = res.Err
-	case *pb.DeleteDocumentsByIdReply:
-		str = res.Err
-	default:
-		str = "unexpected response type"
-	}
-	return toError(str)
 }
