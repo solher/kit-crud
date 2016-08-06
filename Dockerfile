@@ -1,7 +1,9 @@
 FROM golang:1.6-alpine
 
-ENV APP_NAME="kit-crud"
 ENV SRC_PATH="/go/src/github.com/solher/kit-crud"
+
+ADD https://raw.githubusercontent.com/solher/env2flags/master/env2flags.sh /usr/local/bin/env2flags
+RUN chmod u+x /usr/local/bin/env2flags
 
 RUN apk add --update git \
 && mkdir -p $SRC_PATH
@@ -9,14 +11,13 @@ COPY . $SRC_PATH
 WORKDIR $SRC_PATH
 
 RUN go get -u ./... \
-&& go build -v \
-&& cp $APP_NAME /usr/bin \
+&& go build -o app \
+&& cp app /usr/local/bin \
 && apk del git \
-&& rm -rf /go/* \
-&& adduser -D app
+&& rm -rf /go/*
 
 WORKDIR /
 
-USER app
 EXPOSE 8082
-CMD $APP_NAME -zipkin.addr="zipkin:9410"
+ENTRYPOINT ["env2flags", "ZIPKIN_ADDR", "--"]
+CMD ["app"]

@@ -1,7 +1,6 @@
 package library
 
 import (
-	"errors"
 	"time"
 
 	stdopentracing "github.com/opentracing/opentracing-go"
@@ -38,7 +37,8 @@ func (s *Repository) Run(ctx context.Context, query string) (string, error) {
 	// Database call simulation
 	time.Sleep(2 * time.Millisecond)
 
-	err := errors.New("db error")
+	var err error
+	// err := errors.New("db error")
 	if err != nil {
 		clientSpan.SetTag("error", err.Error())
 		return "", err
