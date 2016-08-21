@@ -1,0 +1,59 @@
+machine:
+  environment:
+    # Go
+    GODIST: "go1.7.linux-amd64.tar.gz"
+    # Google Cloud
+    APP_NAME: kit-crud
+    PROJECT_NAME: kube-basic
+    CLUSTER_NAME: main
+    CLOUDSDK_COMPUTE_ZONE: europe-west1-d
+    REGISTRY: eu.gcr.io
+    DEBIAN_FRONTEND: noninteractive
+  services:
+    - docker
+  post:
+    # Install Go
+    - mkdir -p download
+    - test -e download/$GODIST || curl -o download/$GODIST https://storage.googleapis.com/golang/$GODIST
+    - sudo rm -rf /usr/local/go
+    - sudo tar -C /usr/local -xzf download/$GODIST
+
+dependencies:
+  cache_directories:
+    - ~/download
+  pre:
+    # Download app dependencies
+    - go get -d ./...
+  override:
+    # Build app
+    - go build -v
+  post:
+    # Setup Google Cloud
+    - sudo /opt/google-cloud-sdk/bin/gcloud --quiet components update
+    - sudo /opt/google-cloud-sdk/bin/gcloud --quiet components update kubectl
+    - echo $GCLOUD_SERVICE_KEY | base64 --decode > ${HOME}/gcloud-service-key.json
+    - sudo /opt/google-cloud-sdk/bin/gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+    - sudo /opt/google-cloud-sdk/bin/gcloud config set project $PROJECT_NAME
+    - sudo /opt/google-cloud-sdk/bin/gcloud --quiet config set container/cluster $CLUSTER_NAME
+    - sudo /opt/google-cloud-sdk/bin/gcloud config set compute/zone ${CLOUDSDK_COMPUTE_ZONE}
+    - sudo /opt/google-cloud-sdk/bin/gcloud --quiet container clusters get-credentials $CLUSTER_NAME
+    # Build Docker image
+    - docker build -t ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:$CIRCLE_SHA1 .
+    - docker tag ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:$CIRCLE_SHA1 ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:latest
+
+test:
+  override:
+    # App
+    - go test -v -race ./...
+  post:
+    # Docker image
+    # - docker run -d -p 3000:3000 ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:$CIRCLE_SHA1; sleep 10
+    # - curl --retry 10 --retry-delay 5 -v http://localhost:3000
+
+deployment:
+  prod:
+    branch: master
+    commands:
+      - sudo /opt/google-cloud-sdk/bin/gcloud docker push ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}
+      - sudo chown -R ubuntu:ubuntu /home/ubuntu/.kube
+      - kubectl --namespace=ingress get pods
