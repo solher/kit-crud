@@ -51,9 +51,16 @@ test:
     # - curl --retry 10 --retry-delay 5 -v http://localhost:3000
 
 deployment:
-  prod:
+  staging:
     branch: master
     commands:
       - sudo /opt/google-cloud-sdk/bin/gcloud docker push ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}
       - sudo chown -R ubuntu:ubuntu /home/ubuntu/.kube
-      - kubectl --namespace=ingress get pods
+      - kubectl --namespace=staging patch deployment ${APP_NAME} -p '{"spec":{"template":{"spec":{"containers":[{"image":"${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:'"$CIRCLE_SHA1"'"}]}}}}'
+  production:
+    tag: /v[0-9]+(\.[0-9]+)+/
+    commands:
+      - docker tag ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:$CIRCLE_SHA1 ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:$CIRCLE_TAG
+      - sudo /opt/google-cloud-sdk/bin/gcloud docker push ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}
+      - sudo chown -R ubuntu:ubuntu /home/ubuntu/.kube
+      - kubectl --namespace=production patch deployment ${APP_NAME} -p '{"spec":{"template":{"spec":{"containers":[{"image":"${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:'"$CIRCLE_TAG"'"}]}}}}'
