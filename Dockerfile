@@ -7,6 +7,6 @@ COPY ./kit-crud /usr/local/bin
 
 WORKDIR /
 
-EXPOSE 3000
-ENTRYPOINT ["env2flags", "ZIPKIN_ADDR", "--"]
+EXPOSE 8082
+ENTRYPOINT ["env2flags", "APPDASH_ADDR", "--"]
 CMD ["kit-crud"]
