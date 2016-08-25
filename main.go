@@ -13,8 +13,8 @@ import (
 	stdopentracing "github.com/opentracing/opentracing-go"
 	"github.com/solher/kit-crud/library"
 
-	"github.com/sourcegraph/appdash"
-	appdashot "github.com/sourcegraph/appdash/opentracing"
+	"sourcegraph.com/sourcegraph/appdash"
+	appdashot "sourcegraph.com/sourcegraph/appdash/opentracing"
 
 	"github.com/solher/kit-crud/pb"
 	"golang.org/x/net/context"
