@@ -7,14 +7,14 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	stdopentracing "github.com/opentracing/opentracing-go"
 	"github.com/solher/kit-crud/library"
 
-	zipkin "github.com/openzipkin/zipkin-go-opentracing"
+	"github.com/sourcegraph/appdash"
+	appdashot "github.com/sourcegraph/appdash/opentracing"
 
 	"github.com/solher/kit-crud/pb"
 	"golang.org/x/net/context"
@@ -23,8 +23,8 @@ import (
 
 func main() {
 	var (
-		grpcAddr   = flag.String("grpc.addr", ":8082", "gRPC (HTTP) listen address")
-		zipkinAddr = flag.String("zipkin.addr", "", "Enable Zipkin tracing via a Scribe server host:port")
+		grpcAddr    = flag.String("grpc.addr", ":8082", "gRPC (HTTP) listen address")
+		appdashAddr = flag.String("appdash.addr", "", "Enable Appdash tracing via server host:port")
 	)
 	flag.Parse()
 
@@ -44,27 +44,11 @@ func main() {
 	// Tracing domain.
 	var tracer stdopentracing.Tracer
 	{
-		if *zipkinAddr != "" {
-			logger := log.NewContext(logger).With("tracer", "Zipkin")
-			logger.Log("msg", "sending trace to "+*zipkinAddr)
-			collector, err := zipkin.NewScribeCollector(
-				*zipkinAddr,
-				3*time.Second,
-				zipkin.ScribeLogger(logger),
-			)
-			if err != nil {
-				logger.Log("err", err)
-				exitCode = 1
-				return
-			}
-			tracer, err = zipkin.NewTracer(
-				zipkin.NewRecorder(collector, false, "kit-crud:8082", "Library"),
-			)
-			if err != nil {
-				logger.Log("err", err)
-				exitCode = 1
-				return
-			}
+		if *appdashAddr != "" {
+			logger := log.NewContext(logger).With("tracer", "Appdash")
+			logger.Log("msg", "sending trace to "+*appdashAddr)
+			tracer = appdashot.NewTracer(appdash.NewRemoteCollector(*appdashAddr))
+
 		} else {
 			logger := log.NewContext(logger).With("tracer", "none")
 			logger.Log("msg", "tracing disabled")
