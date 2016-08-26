@@ -26,7 +26,7 @@ dependencies:
     - go get -d -v ./...
   override:
     # Build app
-    - go build -v
+    - CGO_ENABLED=0 go build -v
   post:
     # Setup Google Cloud
     - sudo /opt/google-cloud-sdk/bin/gcloud --quiet components update --version 118.0.0
