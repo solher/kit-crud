@@ -26,7 +26,7 @@ dependencies:
     - go get -d -v ./...
   override:
     # Build app
-    - CGO_ENABLED=0 go build -v
+    - GOGC=off CGO_ENABLED=0 go build -v
   post:
     # Setup Google Cloud
     - sudo /opt/google-cloud-sdk/bin/gcloud --quiet components update --version 118.0.0
@@ -56,11 +56,11 @@ deployment:
     commands:
       - sudo /opt/google-cloud-sdk/bin/gcloud docker push ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}
       - sudo chown -R ubuntu:ubuntu /home/ubuntu/.kube
-      - kubectl --namespace=staging patch deployment ${APP_NAME} -p '{"spec":{"template":{"spec":{"containers":[{"image":"${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:'"$CIRCLE_SHA1"'"}]}}}}'
+      - kubectl --namespace=staging patch deployment ${APP_NAME} -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${APP_NAME}'","image":"'${REGISTRY}'/'${PROJECT_NAME}'/'${APP_NAME}':'$CIRCLE_SHA1'"}]}}}}'
   production:
-    tag: /v[0-9]+(\.[0-9]+)+/
+    tag: /[0-9]+(\.[0-9]+)+/
     commands:
       - docker tag ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:$CIRCLE_SHA1 ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:$CIRCLE_TAG
       - sudo /opt/google-cloud-sdk/bin/gcloud docker push ${REGISTRY}/${PROJECT_NAME}/${APP_NAME}
       - sudo chown -R ubuntu:ubuntu /home/ubuntu/.kube
-      - kubectl --namespace=production patch deployment ${APP_NAME} -p '{"spec":{"template":{"spec":{"containers":[{"image":"${REGISTRY}/${PROJECT_NAME}/${APP_NAME}:'"$CIRCLE_TAG"'"}]}}}}'
+      - kubectl --namespace=production patch deployment ${APP_NAME} -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${APP_NAME}'","image":"'${REGISTRY}'/'${PROJECT_NAME}'/'${APP_NAME}':'$CIRCLE_TAG'"}]}}}}'
